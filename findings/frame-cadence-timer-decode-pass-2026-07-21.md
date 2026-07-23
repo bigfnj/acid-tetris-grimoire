@@ -94,6 +94,21 @@ Port implication:
   renderer runs one tick per frame with a 6-step catch-up cap; gravity/repeat/ramp
   counters are in ticks.
 
+## Correction (2026-07-23, runtime): the effective rate is ~60 Hz
+
+This pass flagged that a specific configuration's real-time cadence "still requires a
+runtime capture." That capture was done: a side-by-side recording of the port against
+the running original (both on one 30 fps timeline) measured the fixed 64-frame menu
+pulse (`0x3fd8`, phase `+0x20`/frame over the `0x800` table) at **~1.07 s** on the
+original, i.e. **~60 Hz**, not 70. Pacing the port at 70.086 Hz ran the whole game
+~1.19x (= 70/60) too fast (menu pulse, top-out particle spray, gravity, soft-drop --
+all of it, as expected for a single global clock). The port now paces at 60 Hz.
+
+The static architecture above still stands (per-frame tick, `[0x2c607]` budget, 6-step
+catch-up, PIT calibrated off the retrace poll); the bare-metal retrace is ~70 Hz, but
+the running-game reference people actually compare against plays at ~60 Hz, so that is
+the port's target. Frame-COUNT invariants (RNG, gates) are rate-independent.
+
 ## Method Note
 
 Decoded statically with capstone against
